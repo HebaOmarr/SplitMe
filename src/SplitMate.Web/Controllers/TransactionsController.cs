@@ -25,9 +25,9 @@ public class TransactionsController(AppDbContext db, BalanceService balances) : 
         return View(tx);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(bool flat = false)
     {
-        var form = new ExpenseForm { PayerId = Me.Id, Date = Today };
+        var form = new ExpenseForm { PayerId = flat ? ExpenseForm.FlatMoney : Me.Id, Date = Today };
         return View("Form", await FillAsync(form, await MembersAsync()));
     }
 

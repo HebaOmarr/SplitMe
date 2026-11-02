@@ -24,16 +24,8 @@
     <div class="hero-amount amount">@Ui.Money(Model.Total)</div>
     <div class="hero-stats">
         <div>
-            <span class="stat-icon pos"><i class="bi bi-cash-stack"></i></span>
-            <span><small>@Ui.T("Total collected")</small><strong class="amount">@Ui.Money(Model.Collected)</strong></span>
-        </div>
-        <div>
             <span class="stat-icon neg"><i class="bi bi-receipt"></i></span>
-            <span><small>@Ui.T("Spent from flat money")</small><strong class="amount">@Ui.Money(Model.SpentFromFlat)</strong></span>
-        </div>
-        <div>
-            <span class="stat-icon pos"><i class="bi bi-piggy-bank"></i></span>
-            <span><small>@Ui.T("Remaining balance")</small><strong class="amount" dir="ltr">@(Model.Collected < Model.SpentFromFlat ? "−" : "")@Ui.Money(Math.Abs(Model.Collected - Model.SpentFromFlat))</strong></span>
+            <span><small>@Ui.T("Total expenses")</small><strong class="amount">@Ui.Money(Model.TotalExpenses)</strong></span>
         </div>
         <div>
             <span class="stat-icon neg"><i class="bi bi-hourglass-split"></i></span>
@@ -42,35 +34,41 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <div class="section-title mb-0"><span class="dot pos"></span>@Ui.T("Flat payments")</div>
-    <a asp-controller="Contributions" asp-action="Index" class="toggle-pill"><i class="bi bi-plus-lg"></i>@Ui.T("Add flat payment")</a>
-</div>
+<div class="section-title"><span class="dot violet"></span>@Ui.T("Each person")</div>
 <div class="card-soft mb-3">
-    @foreach (var c in Model.Contributions)
+    @foreach (var p in Model.People)
     {
-        <partial name="_TransactionLine" model="c" />
-    }
-    @if (Model.Contributions.Count == 0)
-    {
-        <div class="empty">@Ui.T("No flat payments this month")</div>
+        <details class="person">
+            <summary class="row-item">
+                @Ui.Avatar(p.Name)
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold text-truncate">@p.Name</div>
+                    <small class="text-muted">@Ui.T("Paid in {0}", Ui.Date(Model.Month, "MMMM"))</small>
+                </div>
+                <span class="amount fw-bold">@Ui.Money(p.Paid)</span>
+                <i class="bi bi-chevron-down text-muted person-chevron"></i>
+            </summary>
+            <div class="px-3 pb-3 small">
+                @if (p.Paid > 0)
+                {
+                    <div class="fw-semibold mb-1">@Ui.T("Where the money went")</div>
+                    <partial name="_Meters" model="p.Reasons" />
+                    <div class="fw-semibold mt-3 mb-1">@Ui.T("For whom")</div>
+                    <partial name="_Meters" model="p.ForWhom" />
+                }
+                else
+                {
+                    <div class="text-muted">@Ui.T("Nothing paid in {0}", Ui.Date(Model.Month, "MMMM"))</div>
+                }
+                <div class="fw-semibold mt-3 mb-1">@Ui.T("Last 6 months")</div>
+                <partial name="_Meters" model="p.Months" />
+            </div>
+        </details>
     }
 </div>
 
 @if (Model.Items.Count > 0)
 {
-    <div class="section-title"><span class="dot violet"></span>@Ui.T("Who paid expenses")</div>
-    <div class="card-soft mb-3">
-        @foreach (var p in Model.Payers)
-        {
-            <div class="row-item">
-                @Ui.Avatar(p.Name)
-                <div class="flex-grow-1 min-w-0 fw-semibold text-truncate">@p.Name</div>
-                <span class="amount fw-bold">@Ui.Money(p.Amount)</span>
-            </div>
-        }
-    </div>
-
     <div class="section-title"><span class="dot violet"></span>@Ui.T("Expenses")</div>
     <div class="card-soft mb-3">
         @foreach (var t in Model.Items)
@@ -112,7 +110,7 @@
         {
             <div class="d-flex justify-content-between py-1">
                 <span>@m.Name</span>
-                <span class="amount fw-semibold"><span class="amount-pos">+@Ui.Money(m.Collected)</span> · <span class="amount-neg">−@Ui.Money(m.Spent)</span></span>
+                <span class="amount fw-semibold">@Ui.Money(m.Amount)</span>
             </div>
         }
     </details>
@@ -122,8 +120,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <script>
         const cats = @Json.Serialize(Model.Categories.Select(c => new { label = Ui.T(c.Name), value = c.Amount, color = colors[c.Name] }));
-        const months = @Json.Serialize(Model.Months.Select(m => new { label = m.Name, collected = m.Collected, spent = m.Spent }));
-        const series = @Json.Serialize(new { collected = Ui.T("Collected"), spent = Ui.T("Spent") });
+        const months = @Json.Serialize(Model.Months.Select(m => new { label = m.Name, value = m.Amount }));
         const rtl = document.dir === 'rtl';
         const money = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
@@ -138,16 +135,10 @@
 
         new Chart(document.getElementById('byMonth'), {
             type: 'bar',
-            data: {
-                labels: months.map(m => m.label),
-                datasets: [
-                    { label: series.collected, data: months.map(m => m.collected), backgroundColor: '#10b981', borderRadius: 4, maxBarThickness: 36 },
-                    { label: series.spent, data: months.map(m => m.spent), backgroundColor: '#6366f1', borderRadius: 4, maxBarThickness: 36 }
-                ]
-            },
+            data: { labels: months.map(m => m.label), datasets: [{ data: months.map(m => m.value), backgroundColor: '#6366f1', borderRadius: 4, maxBarThickness: 36 }] },
             options: {
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', rtl }, tooltip: { rtl, callbacks: { label: c => ' ' + c.dataset.label + ': ' + money(c.parsed.y) } } },
+                plugins: { legend: { display: false }, tooltip: { rtl, callbacks: { label: c => ' ' + money(c.parsed.y) } } },
                 scales: {
                     x: { reverse: rtl, grid: { display: false } },
                     y: { position: rtl ? 'right' : 'left', beginAtZero: true, grid: { color: '#f0f1f5' }, border: { display: false } }

@@ -25,22 +25,15 @@ public class StatsController(AppDbContext db, BalanceService balances) : AppCont
             .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
             .ToListAsync();
         var expenses = txs.Where(t => t.Kind is TransactionKind.Expense or TransactionKind.FlatExpense).ToList();
-        var contributions = txs.Where(t => t.Kind == TransactionKind.Contribution).ToList();
         var inMonth = expenses.Where(e => e.Date >= selected && e.Date < to).ToList();
 
         var vm = new StatsVm
         {
             Month = selected,
             Total = inMonth.Sum(e => e.Amount),
-            Collected = contributions.Sum(c => c.Amount),
-            SpentFromFlat = expenses.Where(e => e.Kind == TransactionKind.FlatExpense).Sum(e => e.Amount),
-            Contributions = contributions.Where(c => c.Date >= selected && c.Date < to).ToList(),
+            TotalExpenses = expenses.Sum(e => e.Amount),
             StillOwed = balances.GetNetBalances(txs).Values.Where(v => v > 0).Sum(),
-            Payers = inMonth
-                .GroupBy(e => e.Kind == TransactionKind.FlatExpense ? "" : e.PayerId)
-                .Select(g => new StatsItem(g.Key == "" ? Ui.T("Flat money") : g.First().Payer!.DisplayName, g.Sum(e => e.Amount)))
-                .OrderByDescending(p => p.Amount)
-                .ToList(),
+            People = PersonStatsBuilder.Build(await MembersAsync(), txs, selected),
             Items = inMonth,
             Categories = Categories
                 .Select(c => new StatsItem(c, inMonth.Where(e => Category(e.Reason) == c).Sum(e => e.Amount)))
@@ -48,10 +41,7 @@ public class StatsController(AppDbContext db, BalanceService balances) : AppCont
                 .ToList(),
             Months = Enumerable.Range(0, 6)
                 .Select(i => from.AddMonths(i))
-                .Select(d => new StatsMonth(
-                    Ui.Date(d, "MMM"),
-                    contributions.Where(c => c.Date >= d && c.Date < d.AddMonths(1)).Sum(c => c.Amount),
-                    expenses.Where(e => e.Date >= d && e.Date < d.AddMonths(1)).Sum(e => e.Amount)))
+                .Select(d => new StatsItem(Ui.Date(d, "MMM"), expenses.Where(e => e.Date >= d && e.Date < d.AddMonths(1)).Sum(e => e.Amount)))
                 .ToList()
         };
         return View(vm);

@@ -472,6 +472,43 @@ a.row-item:hover, a.row-item:active {
   color: rgba(255, 255, 255, 0.85);
 }
 
+.person {
+  border-bottom: 1px solid var(--sm-line);
+}
+
+.person:last-child {
+  border-bottom: 0;
+}
+
+.person summary {
+  list-style: none;
+  cursor: pointer;
+  border-bottom: 0;
+}
+
+.person summary::-webkit-details-marker {
+  display: none;
+}
+
+.person[open] .person-chevron {
+  transform: rotate(180deg);
+}
+
+.meter {
+  height: 6px;
+  margin-top: 3px;
+  border-radius: 999px;
+  background: var(--sm-line);
+  overflow: hidden;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sm-violet);
+}
+
 .pick-row {
   cursor: pointer;
   margin: 0;

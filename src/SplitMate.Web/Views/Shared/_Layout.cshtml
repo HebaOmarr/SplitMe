@@ -34,7 +34,6 @@
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
                         <li><span class="dropdown-item-text small text-muted">@Ui.T("Signed in as") <strong>@User.Identity?.Name</strong></span></li>
                         <li><a class="dropdown-item" asp-controller="Group" asp-action="Index"><i class="bi bi-people me-2"></i>@Ui.T("My group")</a></li>
-                        <li><a class="dropdown-item" asp-controller="Contributions" asp-action="Index"><i class="bi bi-piggy-bank me-2"></i>@Ui.T("Flat payments")</a></li>
                         <li><a class="dropdown-item" asp-controller="Help" asp-action="Index"><i class="bi bi-question-circle me-2"></i>@Ui.T("Help")</a></li>
                         <li><a class="dropdown-item" asp-controller="Account" asp-action="Language" asp-route-lang="@(Ui.Ar ? "en" : "ar")" asp-route-returnUrl="@returnUrl"><i class="bi bi-translate me-2"></i>@(Ui.Ar ? "English" : "عربي")</a></li>
                         <li><hr class="dropdown-divider" /></li>
@@ -72,7 +71,7 @@
             <a class="@Active("Timeline")" style="--c:#f97316" asp-controller="Timeline" asp-action="Index"><i class="bi bi-clock-history"></i>@Ui.T("Timeline")</a>
             <a class="fab" asp-controller="Transactions" asp-action="Create" aria-label="@Ui.T("Add expense")"><i class="bi bi-plus-lg"></i></a>
             <a class="@Active("Stats")" style="--c:#10b981" asp-controller="Stats" asp-action="Index"><i class="bi bi-bar-chart-fill"></i>@Ui.T("Dashboard")</a>
-            <a class="@Active("Group")" style="--c:#ec4899" asp-controller="Group" asp-action="Index"><i class="bi bi-people-fill"></i>@Ui.T("Group")</a>
+            <a class="@Active("Contributions")" style="--c:#ec4899" asp-controller="Contributions" asp-action="Index"><i class="bi bi-piggy-bank-fill"></i>@Ui.T("Flat")</a>
         </nav>
     }
 

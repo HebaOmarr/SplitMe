@@ -1,0 +1,14 @@
+@model List<StatsItem>
+@{
+    var max = Model.Count == 0 ? 0 : Model.Max(i => i.Amount);
+}
+@foreach (var i in Model)
+{
+    <div class="py-1">
+        <div class="d-flex justify-content-between gap-2">
+            <span class="text-truncate">@i.Name</span>
+            <span class="amount fw-semibold">@Ui.Money(i.Amount)</span>
+        </div>
+        <div class="meter"><span style="width:@(max > 0 ? Math.Round(i.Amount * 100 / max) : 0)%"></span></div>
+    </div>
+}

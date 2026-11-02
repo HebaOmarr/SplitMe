@@ -12,10 +12,10 @@
         (Tone: "tone-rent", Icon: "bi-plus-lg", Title: "Add expense", Controller: (string?)"Transactions", Action: "Create", Lines: new[]
         {
             "Enter how much was paid and pick who it was for. The button stays off until both are done.",
+            "Choose who paid. It starts on you.",
+            "Choose Flat money if the bill came from the flat's money. Nobody owes anyone for it, and it comes out of the money in the flat.",
             "Use Everyone, Except me or Clear to pick people quickly.",
             "The amount is split equally. Turn on Custom amounts to set each person's share; the shares must add up to the total.",
-            "Choose who paid. It starts on you.",
-            "Choose Flat money if the bill came from the flat's money. Nobody owes anyone for it, and it reduces the remaining balance.",
             "Pick a reason or type your own. You can also add a note and change the date."
         }),
         (Tone: "tone-bills", Icon: "bi-receipt", Title: "Expense details", Controller: (string?)null, Action: "", Lines: new[]
@@ -34,22 +34,24 @@
         }),
         (Tone: "tone-settle", Icon: "bi-bar-chart-fill", Title: "Dashboard", Controller: (string?)"Stats", Action: "Index", Lines: new[]
         {
-            "Pick a month to see what the group spent that month.",
-            "Remaining balance is total collected minus what was spent from flat money. Still owed is what members still owe each other. These overall figures do not change with the month.",
-            "Who paid expenses lists each person and how much they paid that month.",
+            "Pick a month to see what the group spent that month, including bills paid from flat money.",
+            "Total expenses is everything spent so far. Still owed is what members still owe each other. These two do not change with the month.",
+            "Each person shows how much they paid that month. Tap a person to see where their money went, who it was for, and what they paid in each of the last 6 months.",
             "Expenses lists each expense with the reason, who it was for, who paid, the amount and the date.",
-            "The charts show spending by category, and money collected and spent over the last 6 months. Reasons you type yourself count as Other."
+            "The charts show spending by category and over the last 6 months. Reasons you type yourself count as Other."
         }),
-        (Tone: "tone-settle", Icon: "bi-piggy-bank", Title: "Flat payments", Controller: (string?)"Contributions", Action: "Index", Lines: new[]
+        (Tone: "tone-shopping", Icon: "bi-piggy-bank-fill", Title: "Flat money", Controller: (string?)"Contributions", Action: "Index", Lines: new[]
         {
-            "Record money a resident pays into the flat: the amount, who paid, a note and the date.",
-            "See the total each person has paid, including anyone who has not paid yet.",
+            "See how much money the flat has now: everything residents paid in, minus bills paid from flat money.",
+            "Where the money went shows totals by reason and every bill paid from flat money.",
+            "Who paid in shows each person's total, including anyone who has not paid yet, and every flat payment.",
+            "Use Add flat payment when a resident pays in, and Add bill when a bill is paid from flat money.",
             "Flat payments do not change who owes whom on Home.",
             "Open a flat payment to delete it. Only the person who added it can do this. To fix one, delete it and add it again."
         }),
-        (Tone: "tone-shopping", Icon: "bi-people-fill", Title: "Group", Controller: (string?)"Group", Action: "Index", Lines: new[]
+        (Tone: "tone-other", Icon: "bi-people-fill", Title: "Group", Controller: (string?)"Group", Action: "Index", Lines: new[]
         {
-            "Everyone in a group sees the same expenses. Each account belongs to one group.",
+            "Open My group from the menu at the top. Everyone in a group sees the same expenses. Each account belongs to one group.",
             "A new account can join with a code or create a new group.",
             "Invite people by copying the code or sharing the link.",
             "The owner can make a new code. The old one stops working."
@@ -57,7 +59,7 @@
         (Tone: "tone-transport", Icon: "bi-translate", Title: "Language and account", Controller: (string?)null, Action: "", Lines: new[]
         {
             "Tap the circle with your initial at the top to switch between English and Arabic.",
-            "The same menu has My group, Flat payments, Help and Logout."
+            "The same menu has My group, Help and Logout."
         })
     };
 }

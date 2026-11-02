@@ -1,26 +1,33 @@
 @model ContributionForm
 @{
-    ViewData["Title"] = Ui.T("Flat payments");
+    ViewData["Title"] = Ui.T("Flat money");
+    var balance = Model.Collected - Model.Spent;
+    var formOpen = !ViewData.ModelState.IsValid;
 }
 
-<h1 class="h4 fw-bold mb-3">@Ui.T("Flat payments")</h1>
+<h1 class="h4 fw-bold mb-3">@Ui.T("Flat money")</h1>
 
-<div class="hero hero-green mb-4">
-    <div class="hero-label">@Ui.T("Total collected")</div>
-    <div class="hero-amount amount">@Ui.Money(Model.Collected)</div>
+<div class="hero hero-green mb-3">
+    <div class="hero-label">@Ui.T("Money in the flat now")</div>
+    <div class="hero-amount amount"><span dir="ltr">@(balance < 0 ? "−" : "")@Ui.Money(Math.Abs(balance))</span></div>
     <div class="hero-stats">
+        <div>
+            <span class="stat-icon pos"><i class="bi bi-cash-stack"></i></span>
+            <span><small>@Ui.T("Total collected")</small><strong class="amount">@Ui.Money(Model.Collected)</strong></span>
+        </div>
         <div>
             <span class="stat-icon neg"><i class="bi bi-receipt"></i></span>
             <span><small>@Ui.T("Spent from flat money")</small><strong class="amount">@Ui.Money(Model.Spent)</strong></span>
         </div>
-        <div>
-            <span class="stat-icon pos"><i class="bi bi-piggy-bank"></i></span>
-            <span><small>@Ui.T("Remaining balance")</small><strong class="amount" dir="ltr">@(Model.Collected < Model.Spent ? "−" : "")@Ui.Money(Math.Abs(Model.Collected - Model.Spent))</strong></span>
-        </div>
     </div>
 </div>
 
-<form asp-action="Index" method="post">
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <button class="toggle-pill border-0 @(formOpen ? "on" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#add-payment"><i class="bi bi-plus-lg"></i>@Ui.T("Add flat payment")</button>
+    <a asp-controller="Transactions" asp-action="Create" asp-route-flat="true" class="toggle-pill"><i class="bi bi-receipt"></i>@Ui.T("Add bill")</a>
+</div>
+
+<form asp-action="Index" method="post" id="add-payment" class="collapse @(formOpen ? "show" : "")">
     <div asp-validation-summary="All" class="text-danger small"></div>
 
     <div class="amount-card mb-3 text-center">
@@ -47,8 +54,26 @@
     <button type="submit" id="save" class="btn btn-primary w-100 btn-lg mb-4">@Ui.T("Add flat payment")</button>
 </form>
 
-<div class="section-title"><span class="dot pos"></span>@Ui.T("By person")</div>
-<div class="card-soft mb-3">
+<div class="section-title"><span class="dot neg"></span>@Ui.T("Where the money went")</div>
+@if (Model.Bills.Count == 0)
+{
+    <div class="card-soft mb-3"><div class="empty">@Ui.T("Nothing spent from flat money yet")</div></div>
+}
+else
+{
+    <div class="card-soft card-pad mb-2 small">
+        <partial name="_Meters" model="Model.Spending" />
+    </div>
+    <div class="card-soft mb-3">
+        @foreach (var t in Model.Bills)
+        {
+            <partial name="_TransactionLine" model="t" />
+        }
+    </div>
+}
+
+<div class="section-title"><span class="dot pos"></span>@Ui.T("Who paid in")</div>
+<div class="card-soft mb-2">
     @foreach (var p in Model.Totals)
     {
         <div class="row-item">
@@ -58,8 +83,6 @@
         </div>
     }
 </div>
-
-<div class="section-title"><span class="dot pos"></span>@Ui.T("Flat payments")</div>
 <div class="card-soft mb-3">
     @foreach (var t in Model.Items)
     {

@@ -24,4 +24,8 @@ public class ContributionForm
     public List<StatsItem> Totals { get; set; } = [];
 
     public List<Transaction> Items { get; set; } = [];
+
+    public List<StatsItem> Spending { get; set; } = [];
+
+    public List<Transaction> Bills { get; set; } = [];
 }

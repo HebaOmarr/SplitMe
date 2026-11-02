@@ -16,6 +16,13 @@
         <span asp-validation-for="Amount" class="text-white small fw-semibold"></span>
     </div>
 
+    <div class="card-soft card-pad mb-3">
+        <label asp-for="PayerId" class="form-label">@Ui.T("Paid by")</label>
+        <select asp-for="PayerId" class="form-select" asp-items="@(new SelectList(Model.Members, "Id", "DisplayName"))">
+            <option value="@ExpenseForm.FlatMoney">@Ui.T("Flat money")</option>
+        </select>
+    </div>
+
     <div id="for-whom">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="section-title mb-0"><span class="dot violet"></span>@Ui.T("For whom")</div>
@@ -45,13 +52,6 @@
             </div>
             <div id="split-info" class="small fw-semibold text-muted"></div>
         </div>
-    </div>
-
-    <div class="card-soft card-pad mb-3">
-        <label asp-for="PayerId" class="form-label">@Ui.T("Paid by")</label>
-        <select asp-for="PayerId" class="form-select" asp-items="@(new SelectList(Model.Members, "Id", "DisplayName"))">
-            <option value="@ExpenseForm.FlatMoney">@Ui.T("Flat money")</option>
-        </select>
     </div>
 
     <div class="card-soft card-pad mb-3">
