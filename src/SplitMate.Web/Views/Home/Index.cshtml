@@ -1,0 +1,109 @@
+﻿@model DashboardVm
+@{
+    ViewData["Title"] = Ui.T("Home");
+    var sign = Model.Net > 0 ? "+" : Model.Net < 0 ? "−" : "";
+}
+
+<div class="hero mb-4">
+    <div class="hero-label">@Ui.T("Hi {0} 👋 · Your balance", ViewBag.MeName)</div>
+    <div class="hero-amount amount">@sign@Ui.Money(Math.Abs(Model.Net))</div>
+    <div class="hero-sub">@Ui.T(Model.Net > 0 ? "Others pay to you overall" : Model.Net < 0 ? "You pay to others overall" : "You're all settled up 🎉")</div>
+    <div class="hero-stats">
+        <div>
+            <span class="stat-icon neg"><i class="bi bi-arrow-up-right"></i></span>
+            <span><small>@Ui.T("You pay to")</small><strong class="amount">@Ui.Money(Model.YouPayTo.Sum(p => p.Amount))</strong></span>
+        </div>
+        <div>
+            <span class="stat-icon pos"><i class="bi bi-arrow-down-left"></i></span>
+            <span><small>@Ui.T("Pays to you")</small><strong class="amount">@Ui.Money(Model.PaysToYou.Sum(p => p.Amount))</strong></span>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 fw-bold mb-0">@Ui.T("Balances")</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Help" asp-action="Index" class="toggle-pill"><i class="bi bi-question-circle"></i>@Ui.T("Help")</a>
+        <a asp-action="Index" asp-route-simplify="@(!Model.Simplify)" class="toggle-pill @(Model.Simplify ? "on" : "")">
+            <i class="bi @(Model.Simplify ? "bi-check-circle-fill" : "bi-magic")"></i>@Ui.T("Simplify debts")
+        </a>
+    </div>
+</div>
+
+<div class="section-title"><span class="dot neg"></span>@Ui.T("You pay to")</div>
+<div class="card-soft accent-neg mb-3">
+    @foreach (var p in Model.YouPayTo)
+    {
+        <div class="row-item">
+            <a asp-action="With" asp-route-id="@p.UserId" class="d-flex align-items-center gap-3 flex-grow-1 min-w-0 text-reset text-decoration-none">
+                @Ui.Avatar(p.Name)
+                <div class="min-w-0">
+                    <div class="fw-semibold text-truncate">@p.Name</div>
+                    <small class="amount amount-neg fw-bold">@Ui.Money(p.Amount)</small>
+                </div>
+            </a>
+        </div>
+    }
+    @if (Model.YouPayTo.Count == 0)
+    {
+        <div class="empty">@Ui.T("🎉 You don't need to pay anyone")</div>
+    }
+</div>
+
+<div class="section-title"><span class="dot pos"></span>@Ui.T("Pays to you")</div>
+<div class="card-soft accent-pos mb-3">
+    @foreach (var p in Model.PaysToYou)
+    {
+        <a asp-action="With" asp-route-id="@p.UserId" class="row-item text-decoration-none">
+            @Ui.Avatar(p.Name)
+            <div class="flex-grow-1 min-w-0 fw-semibold text-truncate">@p.Name</div>
+            <span class="amount amount-pos fw-bold">@Ui.Money(p.Amount)</span>
+            <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+    }
+    @if (Model.PaysToYou.Count == 0)
+    {
+        <div class="empty">@Ui.T("Nobody needs to pay you right now")</div>
+    }
+</div>
+
+@if (Model.Simplify)
+{
+    <div class="section-title"><span class="dot violet"></span>@Ui.T("Fewest payments for the group")</div>
+    <div class="card-soft accent-violet mb-3">
+        @foreach (var t in Model.GroupTransfers)
+        {
+            <div class="row-item">
+                @Ui.Avatar(t.From, "sm")
+                <i class="bi bi-arrow-right" style="color: var(--sm-violet)"></i>
+                @Ui.Avatar(t.To, "sm")
+                <div class="flex-grow-1 min-w-0 small text-truncate"><strong>@t.From</strong> @Ui.T("pays") <strong>@t.To</strong></div>
+                <span class="amount fw-bold">@Ui.Money(t.Amount)</span>
+            </div>
+        }
+        @if (Model.GroupTransfers.Count == 0)
+        {
+            <div class="empty">@Ui.T("Everyone is settled up")</div>
+        }
+    </div>
+
+    @if (Model.Direct.Count > 0)
+    {
+        <div class="section-title"><span class="dot violet"></span>@Ui.T("How we got your numbers")</div>
+        <div class="card-soft card-pad mb-3 small">
+            <div class="fw-semibold mb-1">@Ui.T("Before simplifying")</div>
+            @foreach (var p in Model.Direct)
+            {
+                <a asp-action="With" asp-route-id="@p.UserId" class="d-flex justify-content-between text-reset text-decoration-none">
+                    <span>@(p.Amount < 0 ? Ui.T("You pay to {0}", p.Name) : Ui.T("{0} pays to you", p.Name))</span>
+                    <span class="amount @(p.Amount < 0 ? "amount-neg" : "amount-pos")">@(p.Amount < 0 ? "−" : "+")@Ui.Money(Math.Abs(p.Amount))</span>
+                </a>
+            }
+            <div class="d-flex justify-content-between fw-bold border-top mt-1 pt-1">
+                <span>@Ui.T("Your balance")</span>
+                <span class="amount">@sign@Ui.Money(Math.Abs(Model.Net))</span>
+            </div>
+            <div class="text-muted mt-2">@Ui.T("Simplify keeps your balance the same but moves payments around so the group makes the fewest transfers. That is why you may pay someone you never shared an expense with.")</div>
+        </div>
+    }
+}

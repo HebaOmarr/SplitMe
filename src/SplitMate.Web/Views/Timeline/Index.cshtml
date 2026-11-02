@@ -1,0 +1,65 @@
+@model TimelineVm
+@{
+    ViewData["Title"] = Ui.T("Timeline");
+    var filterCount = new object?[] { Model.MemberId, Model.Reason, Model.From, Model.To }.Count(f => f is not null);
+    var hideDate = new ViewDataDictionary(ViewData) { ["HideDate"] = true };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h1 class="h4 fw-bold mb-0">@Ui.T("Timeline")</h1>
+    <button class="toggle-pill border-0 @(filterCount > 0 ? "on" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#filters">
+        <i class="bi bi-funnel"></i>@Ui.T("Filters")@(filterCount > 0 ? $" ({filterCount})" : "")
+    </button>
+</div>
+
+<form method="get" id="filters" class="collapse @(filterCount > 0 ? "show" : "")">
+    <div class="card-soft card-pad mb-3">
+        <div class="row g-2">
+            <div class="col-6">
+                <label class="form-label">@Ui.T("Member")</label>
+                <select name="memberId" class="form-select" asp-items="@(new SelectList(Model.Members, "Id", "DisplayName", Model.MemberId))">
+                    <option value="">@Ui.T("Anyone")</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label class="form-label">@Ui.T("Reason")</label>
+                <select name="reason" class="form-select" asp-items="@(new SelectList(Model.Reasons.Select(r => new { Value = r, Text = Ui.T(r) }), "Value", "Text", Model.Reason))">
+                    <option value="">@Ui.T("Any")</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label class="form-label">@Ui.T("From")</label>
+                <input name="from" type="date" class="form-control" value="@Model.From?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-6">
+                <label class="form-label">@Ui.T("To")</label>
+                <input name="to" type="date" class="form-control" value="@Model.To?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-6 mt-3">
+                <a asp-action="Index" class="btn btn-light w-100">@Ui.T("Clear")</a>
+            </div>
+            <div class="col-6 mt-3">
+                <button type="submit" class="btn btn-primary w-100">@Ui.T("Apply")</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@foreach (var day in Model.Items.GroupBy(t => t.Date))
+{
+    <div class="day-label">@Ui.Day(day.Key)</div>
+    <div class="card-soft">
+        @foreach (var t in day)
+        {
+            <partial name="_TransactionLine" model="t" view-data="hideDate" />
+        }
+    </div>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="card-soft empty mt-3">
+        <div class="fs-1">🧾</div>
+        @Ui.T(filterCount > 0 ? "Nothing matches these filters" : "No expenses yet. Tap + to add the first one.")
+    </div>
+}

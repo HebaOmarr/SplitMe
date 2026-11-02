@@ -1,0 +1,94 @@
+@model PersonHistoryVm
+@{
+    ViewData["Title"] = Model.Other.DisplayName;
+    var open = Model.Items.Where(i => !i.IsPaid).ToList();
+    var theyPaid = open.Where(i => i.Amount < 0).ToList();
+    var iPaid = open.Where(i => i.Amount > 0).ToList();
+    var theyTotal = -theyPaid.Sum(i => i.Amount);
+    var iTotal = iPaid.Sum(i => i.Amount);
+    string Label(Transaction t) => Ui.T(t.Kind == TransactionKind.Settlement ? "Paid back" : t.Reason ?? t.Note ?? "Expense");
+}
+
+<a asp-action="Index" class="text-decoration-none small fw-semibold"><i class="bi bi-chevron-left"></i> @Ui.T("Back")</a>
+
+<div class="hero @(Model.Balance > 0 ? "hero-green" : Model.Balance < 0 ? "hero-tone tone-shopping" : "") text-center my-3">
+    @Ui.Avatar(Model.Other.DisplayName, "lg")
+    <h1 class="h5 fw-bold mt-2 mb-1">@Ui.T("You & {0}", Model.Other.DisplayName)</h1>
+    @if (Model.Balance > 0)
+    {
+        <div class="hero-sub">@Ui.T("{0} pays to you", Model.Other.DisplayName)</div>
+        <div class="hero-amount amount">@Ui.Money(Model.Balance)</div>
+    }
+    else if (Model.Balance < 0)
+    {
+        <div class="hero-sub">@Ui.T("You pay to {0}", Model.Other.DisplayName)</div>
+        <div class="hero-amount amount">@Ui.Money(-Model.Balance)</div>
+    }
+    else
+    {
+        <div class="hero-sub">@Ui.T("You're even 🤝")</div>
+    }
+</div>
+
+@if (open.Count > 0)
+{
+    <div class="section-title"><span class="dot violet"></span>@Ui.T("How we got this number")</div>
+    <div class="card-soft card-pad mb-3 small">
+        <div class="fw-semibold mb-1">@Ui.T("{0} paid for you", Model.Other.DisplayName)</div>
+        @foreach (var i in theyPaid)
+        {
+            <a asp-controller="Transactions" asp-action="Details" asp-route-id="@i.Transaction.Id" class="d-flex justify-content-between text-reset text-decoration-none">
+                <span>@Ui.Icon(i.Transaction) @Label(i.Transaction) · @Ui.Date(i.Transaction.Date, "MMM d")</span>
+                <span class="amount">@Ui.Money(-i.Amount)</span>
+            </a>
+        }
+        <div class="d-flex justify-content-between fw-bold border-top mt-1 pt-1 mb-3">
+            <span>@Ui.T("Total")</span>
+            <span class="amount">@Ui.Money(theyTotal)</span>
+        </div>
+
+        <div class="fw-semibold mb-1">@Ui.T("You paid for {0}", Model.Other.DisplayName)</div>
+        @foreach (var i in iPaid)
+        {
+            <a asp-controller="Transactions" asp-action="Details" asp-route-id="@i.Transaction.Id" class="d-flex justify-content-between text-reset text-decoration-none">
+                <span>@Ui.Icon(i.Transaction) @Label(i.Transaction) · @Ui.Date(i.Transaction.Date, "MMM d")</span>
+                <span class="amount">@Ui.Money(i.Amount)</span>
+            </a>
+        }
+        <div class="d-flex justify-content-between fw-bold border-top mt-1 pt-1 mb-3">
+            <span>@Ui.T("Total")</span>
+            <span class="amount">@Ui.Money(iTotal)</span>
+        </div>
+
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+            <span class="amount" dir="ltr">@Ui.Money(theyTotal) − @Ui.Money(iTotal)</span>
+            <span>
+                @if (Model.Balance < 0)
+                {
+                    <span class="amount-neg">@Ui.T("You pay to {0}", Model.Other.DisplayName) @Ui.Money(-Model.Balance)</span>
+                }
+                else if (Model.Balance > 0)
+                {
+                    <span class="amount-pos">@Ui.T("{0} pays to you", Model.Other.DisplayName) @Ui.Money(Model.Balance)</span>
+                }
+                else
+                {
+                    <span>@Ui.T("You're even")</span>
+                }
+            </span>
+        </div>
+        <div class="text-muted mt-2">@Ui.T("Items marked done are not counted.")</div>
+    </div>
+}
+
+<div class="section-title"><span class="dot violet"></span>@Ui.T("History between you")</div>
+<div class="card-soft">
+    @foreach (var item in Model.Items)
+    {
+        <partial name="_TransactionLine" model="item.Transaction" view-data='new ViewDataDictionary(ViewData) { ["Delta"] = item.Amount, ["Paid"] = item.IsPaid }' />
+    }
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty">@Ui.T("Nothing between you yet")</div>
+    }
+</div>

@@ -1,0 +1,86 @@
+@{
+    ViewData["Title"] = Ui.T("Help");
+    var sections = new[]
+    {
+        (Tone: "tone-other", Icon: "bi-house-door-fill", Title: "Home", Controller: (string?)"Home", Action: "Index", Lines: new[]
+        {
+            "See your balance: how much you pay to others and how much they pay to you.",
+            "Tap a person to see how the number was calculated and your full history with them.",
+            "Turn on Simplify debts to see the fewest payments the group could make. Your balance stays the same.",
+            "Simplify debts is only a suggestion. Debts are still cleared with Mark done on each expense."
+        }),
+        (Tone: "tone-rent", Icon: "bi-plus-lg", Title: "Add expense", Controller: (string?)"Transactions", Action: "Create", Lines: new[]
+        {
+            "Enter how much was paid and pick who it was for. The button stays off until both are done.",
+            "Use Everyone, Except me or Clear to pick people quickly.",
+            "The amount is split equally. Turn on Custom amounts to set each person's share; the shares must add up to the total.",
+            "Choose who paid. It starts on you.",
+            "Choose Flat money if the bill came from the flat's money. Nobody owes anyone for it, and it reduces the remaining balance.",
+            "Pick a reason or type your own. You can also add a note and change the date."
+        }),
+        (Tone: "tone-bills", Icon: "bi-receipt", Title: "Expense details", Controller: (string?)null, Action: "", Lines: new[]
+        {
+            "Open any expense from the Timeline or Dashboard to see how it was split.",
+            "Use Mark done when someone has paid their share, so it stops counting in balances. You can undo it.",
+            "Only the payer or that person can mark a share as done.",
+            "The history shows who changed each share and when.",
+            "Only the person who added an expense can edit or delete it."
+        }),
+        (Tone: "tone-food", Icon: "bi-clock-history", Title: "Timeline", Controller: (string?)"Timeline", Action: "Index", Lines: new[]
+        {
+            "See everything the group has recorded, newest first and grouped by day.",
+            "Use Filters to search by member, reason or dates.",
+            "Paybacks recorded earlier still show here and still count in balances."
+        }),
+        (Tone: "tone-settle", Icon: "bi-bar-chart-fill", Title: "Dashboard", Controller: (string?)"Stats", Action: "Index", Lines: new[]
+        {
+            "Pick a month to see what the group spent that month.",
+            "Remaining balance is total collected minus what was spent from flat money. Still owed is what members still owe each other. These overall figures do not change with the month.",
+            "Who paid expenses lists each person and how much they paid that month.",
+            "Expenses lists each expense with the reason, who it was for, who paid, the amount and the date.",
+            "The charts show spending by category, and money collected and spent over the last 6 months. Reasons you type yourself count as Other."
+        }),
+        (Tone: "tone-settle", Icon: "bi-piggy-bank", Title: "Flat payments", Controller: (string?)"Contributions", Action: "Index", Lines: new[]
+        {
+            "Record money a resident pays into the flat: the amount, who paid, a note and the date.",
+            "See the total each person has paid, including anyone who has not paid yet.",
+            "Flat payments do not change who owes whom on Home.",
+            "Open a flat payment to delete it. Only the person who added it can do this. To fix one, delete it and add it again."
+        }),
+        (Tone: "tone-shopping", Icon: "bi-people-fill", Title: "Group", Controller: (string?)"Group", Action: "Index", Lines: new[]
+        {
+            "Everyone in a group sees the same expenses. Each account belongs to one group.",
+            "A new account can join with a code or create a new group.",
+            "Invite people by copying the code or sharing the link.",
+            "The owner can make a new code. The old one stops working."
+        }),
+        (Tone: "tone-transport", Icon: "bi-translate", Title: "Language and account", Controller: (string?)null, Action: "", Lines: new[]
+        {
+            "Tap the circle with your initial at the top to switch between English and Arabic.",
+            "The same menu has My group, Flat payments, Help and Logout."
+        })
+    };
+}
+
+<h1 class="h4 fw-bold mb-1">@Ui.T("Help")</h1>
+<p class="text-muted small mb-3">@Ui.T("Everything SplitMate can do, in one place.")</p>
+
+@foreach (var s in sections)
+{
+    <div class="card-soft card-pad mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="icon-circle @s.Tone"><i class="bi @s.Icon" style="color:var(--tone)"></i></span>
+            <div class="fw-bold flex-grow-1 min-w-0">@Ui.T(s.Title)</div>
+            @if (s.Controller is not null)
+            {
+                <a asp-controller="@s.Controller" asp-action="@s.Action" class="toggle-pill">@Ui.T("Open")</a>
+            }
+        </div>
+        <ul class="small mb-0 ps-3">
+            @foreach (var line in s.Lines)
+            {
+                <li class="mb-1">@Ui.T(line)</li>
+            }
+        </ul>
+    </div>
+}

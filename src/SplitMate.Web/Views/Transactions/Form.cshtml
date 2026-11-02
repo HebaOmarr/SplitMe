@@ -1,0 +1,142 @@
+@model ExpenseForm
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = Ui.T(isEdit ? "Edit expense" : "Add expense");
+    var meId = (string)ViewBag.MeId;
+}
+
+<h1 class="h4 fw-bold mb-3">@ViewData["Title"]</h1>
+
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post">
+    <div asp-validation-summary="All" class="text-danger small"></div>
+
+    <div class="amount-card mb-3 text-center">
+        <label for="amount" class="form-label">@Ui.T("How much was paid?")</label>
+        <input asp-for="Amount" id="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control form-control-lg text-center fw-bold amount" value="@(Model.Amount > 0 ? Model.Amount.ToString("0.00") : "")" placeholder="@Ui.T("Enter the amount")" autofocus="@(!isEdit)" />
+        <span asp-validation-for="Amount" class="text-white small fw-semibold"></span>
+    </div>
+
+    <div id="for-whom">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="section-title mb-0"><span class="dot violet"></span>@Ui.T("For whom")</div>
+            <div class="d-flex gap-1">
+                <button type="button" class="chip tone-rent" data-select="all">@Ui.T("Everyone")</button>
+                <button type="button" class="chip tone-shopping" data-select="others">@Ui.T("Except me")</button>
+                <button type="button" class="chip chip-plain" data-select="none">@Ui.T("Clear")</button>
+            </div>
+        </div>
+        <div class="card-soft mb-2">
+            @foreach (var m in Model.Members)
+            {
+                <label class="row-item pick-row beneficiary" for="b-@m.Id">
+                    @Ui.Avatar(m.DisplayName)
+                    <span class="flex-grow-1 min-w-0 fw-semibold text-truncate">@m.DisplayName@(m.Id == meId ? " " + Ui.T("(you)") : "")</span>
+                    <span class="equal-share small text-muted amount"></span>
+                    <input class="form-control form-control-sm custom-amount" type="number" step="0.01" min="0" inputmode="decimal"
+                           name="CustomAmounts[@m.Id]" value="@Model.CustomAmounts.GetValueOrDefault(m.Id)?.ToString("0.00")" placeholder="0.00" />
+                    <input class="form-check-input" type="checkbox" name="BeneficiaryIds" value="@m.Id" id="b-@m.Id" checked="@Model.BeneficiaryIds.Contains(m.Id)" data-me="@(m.Id == meId ? "1" : "0")" />
+                </label>
+            }
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+            <div class="form-check form-switch mb-0">
+                <input asp-for="CustomSplit" class="form-check-input" id="customSplit" />
+                <label class="form-check-label small fw-semibold" for="customSplit">@Ui.T("Custom amounts")</label>
+            </div>
+            <div id="split-info" class="small fw-semibold text-muted"></div>
+        </div>
+    </div>
+
+    <div class="card-soft card-pad mb-3">
+        <label asp-for="PayerId" class="form-label">@Ui.T("Paid by")</label>
+        <select asp-for="PayerId" class="form-select" asp-items="@(new SelectList(Model.Members, "Id", "DisplayName"))">
+            <option value="@ExpenseForm.FlatMoney">@Ui.T("Flat money")</option>
+        </select>
+    </div>
+
+    <div class="card-soft card-pad mb-3">
+        <label asp-for="Reason" class="form-label">@Ui.T("Reason")</label>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+            @foreach (var r in Model.ReasonSuggestions.Take(10))
+            {
+                <button type="button" class="chip @Ui.Tone(r)" data-reason="@r">@Ui.T(r)</button>
+            }
+        </div>
+        <input asp-for="Reason" class="form-control" list="reasons" maxlength="30" placeholder="@Ui.T("Pick above or type your own")" />
+        <datalist id="reasons">
+            @foreach (var r in Model.ReasonSuggestions)
+            {
+                <option value="@r"></option>
+            }
+        </datalist>
+    </div>
+
+    <div class="card-soft card-pad mb-3">
+        <div class="row g-2">
+            <div class="col-7">
+                <label asp-for="Note" class="form-label">@Ui.T("Note")</label>
+                <input asp-for="Note" class="form-control" maxlength="100" placeholder="@Ui.T("e.g. pizza")" />
+            </div>
+            <div class="col-5">
+                <label asp-for="Date" class="form-label">@Ui.T("Date")</label>
+                <input asp-for="Date" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" id="save" class="btn btn-primary w-100 btn-lg">@Ui.T(isEdit ? "Save changes" : "Add expense")</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const t = @Json.Serialize(new { addsUp = Ui.T("✓ Adds up"), left = Ui.T("Left:"), person = Ui.T("person"), people = Ui.T("people"), equal = Ui.T("equal split"), needAmount = Ui.T("Enter the amount"), needPeople = Ui.T("Pick who it's for") });
+        const toggle = document.getElementById('customSplit');
+        const amount = document.getElementById('amount');
+        const info = document.getElementById('split-info');
+        const reason = document.getElementById('Reason');
+        const save = document.getElementById('save');
+        const saveLabel = save.textContent;
+        const payer = document.getElementById('PayerId');
+        const forWhom = document.getElementById('for-whom');
+        const rows = [...document.querySelectorAll('.beneficiary')];
+        const box = r => r.querySelector('[type=checkbox]');
+
+        function refresh() {
+            const total = parseFloat(amount.value) || 0;
+            const selected = rows.filter(r => box(r).checked);
+            rows.forEach(r => {
+                r.querySelector('.custom-amount').classList.toggle('d-none', !toggle.checked || !box(r).checked);
+                r.querySelector('.equal-share').textContent = '';
+            });
+            if (toggle.checked) {
+                const sum = selected.reduce((s, r) => s + (parseFloat(r.querySelector('.custom-amount').value) || 0), 0);
+                const left = total - sum;
+                info.textContent = Math.abs(left) < 0.005 ? t.addsUp : t.left + ' ' + left.toFixed(2);
+                info.className = 'small fw-semibold ' + (Math.abs(left) < 0.005 ? 'text-success' : 'text-danger');
+            } else {
+                const cents = Math.round(total * 100);
+                const base = Math.floor(cents / selected.length);
+                if (cents > 0) selected.forEach((r, i) => r.querySelector('.equal-share').textContent = ((base + (i < cents % selected.length ? 1 : 0)) / 100).toFixed(2));
+                info.textContent = selected.length + ' ' + (selected.length === 1 ? t.person : t.people) + ' · ' + t.equal;
+                info.className = 'small fw-semibold text-muted';
+            }
+            document.querySelectorAll('[data-reason]').forEach(c => c.classList.toggle('active', c.dataset.reason.toLowerCase() === reason.value.trim().toLowerCase()));
+            const fromFlat = payer.value === @Json.Serialize(ExpenseForm.FlatMoney);
+            const needPeople = !fromFlat && selected.length === 0;
+            forWhom.classList.toggle('d-none', fromFlat);
+            save.disabled = total <= 0 || needPeople;
+            save.textContent = total <= 0 ? t.needAmount : needPeople ? t.needPeople : saveLabel;
+        }
+
+        document.querySelectorAll('[data-select]').forEach(b => b.addEventListener('click', () => {
+            rows.forEach(r => box(r).checked = b.dataset.select === 'all' || (b.dataset.select === 'others' && box(r).dataset.me !== '1'));
+            refresh();
+        }));
+        document.querySelectorAll('[data-reason]').forEach(c => c.addEventListener('click', () => { reason.value = c.dataset.reason; refresh(); }));
+        document.querySelectorAll('input').forEach(i => i.addEventListener('input', refresh));
+        document.querySelectorAll('input[type=checkbox]').forEach(i => i.addEventListener('change', refresh));
+        payer.addEventListener('change', refresh);
+        refresh();
+    </script>
+}

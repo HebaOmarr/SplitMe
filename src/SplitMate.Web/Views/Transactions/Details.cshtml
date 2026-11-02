@@ -1,0 +1,113 @@
+@model Transaction
+@{
+    var isFlat = Model.Kind == TransactionKind.FlatExpense;
+    var isExpense = Model.Kind == TransactionKind.Expense || isFlat;
+    var isContribution = Model.Kind == TransactionKind.Contribution;
+    ViewData["Title"] = Ui.T(isExpense ? "Expense" : isContribution ? "Flat payment" : "Settlement");
+    var meId = (string)ViewBag.MeId;
+    var isCreator = Model.CreatedById == meId;
+    string Utc(DateTime d) => d.ToString("yyyy-MM-ddTHH:mm:ss") + "Z";
+}
+
+<a asp-controller="Timeline" asp-action="Index" class="text-decoration-none small fw-semibold"><i class="bi bi-chevron-left"></i> @Ui.T("Timeline")</a>
+
+<div class="hero hero-tone @Ui.Tone(Model) text-center my-3">
+    <span class="icon-circle lg">@Ui.Icon(Model)</span>
+    <div class="hero-amount amount mt-2">@Ui.Money(Model.Amount)</div>
+    <div class="fw-semibold">
+        @if (isFlat)
+        {
+            <text>@Ui.T("Paid from flat money")</text>
+        }
+        else if (isExpense)
+        {
+            <text>@Ui.T("{0} paid", Model.Payer?.DisplayName)</text>
+        }
+        else if (isContribution)
+        {
+            <text>@Ui.T("{0} paid into the flat", Model.Payer?.DisplayName)</text>
+        }
+        else
+        {
+            <text>@Ui.T("{0} paid {1} back", Model.Payer?.DisplayName, Model.Shares.FirstOrDefault()?.User?.DisplayName)</text>
+        }
+    </div>
+    <div class="d-flex justify-content-center flex-wrap gap-1 mt-2">
+        <span class="chip chip-glass"><i class="bi bi-calendar3 me-1"></i>@Ui.Date(Model.Date, "ddd, MMM d, yyyy")</span>
+        @if (Model.Reason is not null)
+        {
+            <span class="chip chip-glass"><i class="bi bi-tag-fill me-1"></i>@Ui.T(Model.Reason)</span>
+        }
+        @if (Model.Note is not null)
+        {
+            <span class="chip chip-glass">@Model.Note</span>
+        }
+    </div>
+    <div class="small mt-3" style="opacity:.85">@Ui.T("Added by {0}", ViewBag.CreatedBy) · <time data-local datetime="@Utc(Model.CreatedAt)">@Model.CreatedAt.ToString("MMM d, HH:mm") UTC</time></div>
+</div>
+
+@if (isExpense && !isFlat)
+{
+    <div class="section-title @Ui.Tone(Model)"><span class="dot"></span>@Ui.T("Split between {0}", Model.Shares.Count)</div>
+    <div class="card-soft mb-3">
+        @foreach (var s in Model.Shares.OrderBy(s => s.Id))
+        {
+            var isPayer = s.UserId == Model.PayerId;
+            var canToggle = !isPayer && (meId == Model.PayerId || meId == s.UserId);
+            var lastDone = s.Logs.Where(l => l.IsPaid).MaxBy(l => l.ChangedAt);
+            <div class="row-item flex-wrap">
+                @Ui.Avatar(s.User?.DisplayName)
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-semibold text-truncate">@s.User?.DisplayName</span>
+                        <span class="amount fw-bold">@Ui.Money(s.Amount)</span>
+                    </div>
+                    @if (isPayer)
+                    {
+                        <small class="text-muted">@Ui.T("Paid for their own share")</small>
+                    }
+                    else if (s.IsPaid && lastDone is not null)
+                    {
+                        <small class="amount-pos fw-semibold"><i class="bi bi-check-circle-fill"></i> @Ui.T("Done by {0}", lastDone.ChangedBy?.DisplayName) · <time data-local datetime="@Utc(lastDone.ChangedAt)">@lastDone.ChangedAt.ToString("MMM d, HH:mm") UTC</time></small>
+                    }
+                    else
+                    {
+                        <small class="amount-neg fw-semibold">@Ui.T("Pays to {0}", Model.Payer?.DisplayName)</small>
+                    }
+                </div>
+                @if (canToggle)
+                {
+                    <form asp-action="ToggleDone" method="post">
+                        <input type="hidden" name="shareId" value="@s.Id" />
+                        <button type="submit" class="btn btn-sm rounded-pill px-3 @(s.IsPaid ? "btn-light" : "btn-soft-success")">@Ui.T(s.IsPaid ? "Undo" : "Mark done")</button>
+                    </form>
+                }
+                @if (s.Logs.Count > 0)
+                {
+                    <details class="w-100 ps-5 ms-1">
+                        <summary class="small text-muted">@Ui.T("History ({0})", s.Logs.Count)</summary>
+                        <ul class="small text-muted mb-0 ps-3 mt-1">
+                            @foreach (var l in s.Logs.OrderByDescending(l => l.ChangedAt))
+                            {
+                                <li><time data-local datetime="@Utc(l.ChangedAt)">@l.ChangedAt.ToString("MMM d, HH:mm") UTC</time> — @Ui.T("{0} marked", l.ChangedBy?.DisplayName) <strong>@Ui.T(l.IsPaid ? "Done" : "Not done")</strong></li>
+                            }
+                        </ul>
+                    </details>
+                }
+            </div>
+        }
+    </div>
+}
+
+@if (isCreator)
+{
+    <div class="d-flex gap-2">
+        @if (isExpense)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-soft flex-fill"><i class="bi bi-pencil me-1"></i>@Ui.T("Edit")</a>
+        }
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="flex-fill" onsubmit="return confirm('@Ui.T("Delete this for everyone?")');">
+            <button type="submit" class="btn btn-soft-danger w-100"><i class="bi bi-trash me-1"></i>@Ui.T("Delete")</button>
+        </form>
+    </div>
+}

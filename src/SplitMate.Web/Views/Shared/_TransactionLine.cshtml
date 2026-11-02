@@ -1,0 +1,47 @@
+@model Transaction
+@{
+    var payer = Model.Payer?.DisplayName;
+    var isSettle = Model.Kind == TransactionKind.Settlement;
+    var isContribution = Model.Kind == TransactionKind.Contribution;
+    var isFlat = Model.Kind == TransactionKind.FlatExpense;
+    var tag = string.Join(": ", new[] { Model.Reason is null ? null : Ui.T(Model.Reason), Model.Note }.Where(s => !string.IsNullOrEmpty(s)));
+    var forWhom = Ui.T("for {0}", string.Join(", ", Model.Shares.Select(s => s.User?.DisplayName + (s.IsPaid && s.UserId != Model.PayerId ? " ✓" : ""))));
+    var subtitle = isFlat ? (tag.Length > 0 ? tag : Ui.T("Expense")) : isContribution ? Model.Note ?? Ui.T("Flat payment") : isSettle ? Model.Note ?? Ui.T("Settlement") : tag.Length > 0 ? $"{tag} · {forWhom}" : forWhom;
+}
+<a asp-controller="Transactions" asp-action="Details" asp-route-id="@Model.Id" class="row-item accent text-decoration-none @Ui.Tone(Model)">
+    <span class="icon-circle">@Ui.Icon(Model)</span>
+    <div class="flex-grow-1 min-w-0">
+        <div class="fw-semibold text-truncate">
+            @if (isSettle)
+            {
+                <text>@payer <span class="fw-normal text-muted">@Ui.T("paid back")</span> @Model.Shares.FirstOrDefault()?.User?.DisplayName</text>
+            }
+            else if (isFlat)
+            {
+                <text>@Ui.T("Paid from flat money")</text>
+            }
+            else if (isContribution)
+            {
+                <text>@payer <span class="fw-normal text-muted">@Ui.T("paid into the flat")</span></text>
+            }
+            else
+            {
+                <text>@payer <span class="fw-normal text-muted">@Ui.T("paid")</span></text>
+            }
+        </div>
+        <div class="small text-muted text-truncate">@subtitle</div>
+    </div>
+    <div class="text-end">
+        <div class="fw-bold amount">@Ui.Money(Model.Amount)</div>
+        @if (ViewData["Delta"] is decimal delta)
+        {
+            <small class="amount @(ViewData["Paid"] is true ? "text-muted text-decoration-line-through" : delta > 0 ? "amount-pos" : "amount-neg")" dir="ltr">
+                @(delta > 0 ? $"+{Ui.Money(delta)}" : $"−{Ui.Money(-delta)}")
+            </small>
+        }
+        else if (ViewData["HideDate"] is not true)
+        {
+            <small class="text-muted">@Ui.Date(Model.Date, "MMM d")</small>
+        }
+    </div>
+</a>

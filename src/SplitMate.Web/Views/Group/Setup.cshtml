@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = Ui.T("Set up your group");
+}
+
+<div class="text-center my-4">
+    <div class="fs-1">👋</div>
+    <h1 class="h4 fw-bold">@Ui.T("Welcome to SplitMate")</h1>
+    <p class="text-muted">@Ui.T("Join your friends' group or start a new one.")</p>
+</div>
+
+<div class="card-soft card-pad mb-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="icon-circle tone-other"><i class="bi bi-box-arrow-in-right" style="color:var(--tone)"></i></span>
+        <div>
+            <div class="fw-bold">@Ui.T("Join a group")</div>
+            <small class="text-muted">@Ui.T("Ask a friend for the 8-letter code")</small>
+        </div>
+    </div>
+    <form asp-action="Join" method="post" class="d-flex gap-2">
+        <input name="code" value="@ViewBag.Code" class="form-control text-uppercase font-monospace fw-bold" maxlength="8" placeholder="K7Q2M9XP" autocapitalize="characters" autocomplete="off" required />
+        <button type="submit" class="btn btn-primary px-4">@Ui.T("Join")</button>
+    </form>
+</div>
+
+<div class="text-center text-muted small my-2">@Ui.T("or")</div>
+
+<div class="card-soft card-pad">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="icon-circle tone-settle"><i class="bi bi-plus-lg" style="color:var(--tone)"></i></span>
+        <div>
+            <div class="fw-bold">@Ui.T("Create a new group")</div>
+            <small class="text-muted">@Ui.T("You'll get a code to share")</small>
+        </div>
+    </div>
+    <form asp-action="Create" method="post" class="d-flex gap-2">
+        <input name="name" class="form-control" maxlength="50" placeholder="@Ui.T("e.g. Flatmates")" required />
+        <button type="submit" class="btn btn-soft px-4">@Ui.T("Create")</button>
+    </form>
+</div>

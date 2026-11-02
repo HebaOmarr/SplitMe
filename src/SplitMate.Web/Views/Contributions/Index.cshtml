@@ -1,0 +1,91 @@
+@model ContributionForm
+@{
+    ViewData["Title"] = Ui.T("Flat payments");
+}
+
+<h1 class="h4 fw-bold mb-3">@Ui.T("Flat payments")</h1>
+
+<div class="hero hero-green mb-4">
+    <div class="hero-label">@Ui.T("Total collected")</div>
+    <div class="hero-amount amount">@Ui.Money(Model.Collected)</div>
+    <div class="hero-stats">
+        <div>
+            <span class="stat-icon neg"><i class="bi bi-receipt"></i></span>
+            <span><small>@Ui.T("Spent from flat money")</small><strong class="amount">@Ui.Money(Model.Spent)</strong></span>
+        </div>
+        <div>
+            <span class="stat-icon pos"><i class="bi bi-piggy-bank"></i></span>
+            <span><small>@Ui.T("Remaining balance")</small><strong class="amount" dir="ltr">@(Model.Collected < Model.Spent ? "−" : "")@Ui.Money(Math.Abs(Model.Collected - Model.Spent))</strong></span>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Index" method="post">
+    <div asp-validation-summary="All" class="text-danger small"></div>
+
+    <div class="amount-card mb-3 text-center">
+        <label for="amount" class="form-label">@Ui.T("How much was paid?")</label>
+        <input asp-for="Amount" id="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control form-control-lg text-center fw-bold amount" value="@(Model.Amount > 0 ? Model.Amount.ToString("0.00") : "")" placeholder="@Ui.T("Enter the amount")" />
+        <span asp-validation-for="Amount" class="text-white small fw-semibold"></span>
+    </div>
+
+    <div class="card-soft card-pad mb-3">
+        <label asp-for="PayerId" class="form-label">@Ui.T("Paid by")</label>
+        <select asp-for="PayerId" class="form-select" asp-items="@(new SelectList(Model.Members, "Id", "DisplayName"))"></select>
+        <div class="row g-2 mt-1">
+            <div class="col-7">
+                <label asp-for="Note" class="form-label">@Ui.T("Note")</label>
+                <input asp-for="Note" class="form-control" maxlength="100" placeholder="@Ui.T("e.g. November rent")" />
+            </div>
+            <div class="col-5">
+                <label asp-for="Date" class="form-label">@Ui.T("Date")</label>
+                <input asp-for="Date" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" id="save" class="btn btn-primary w-100 btn-lg mb-4">@Ui.T("Add flat payment")</button>
+</form>
+
+<div class="section-title"><span class="dot pos"></span>@Ui.T("By person")</div>
+<div class="card-soft mb-3">
+    @foreach (var p in Model.Totals)
+    {
+        <div class="row-item">
+            @Ui.Avatar(p.Name)
+            <div class="flex-grow-1 min-w-0 fw-semibold text-truncate">@p.Name</div>
+            <span class="amount fw-bold">@Ui.Money(p.Amount)</span>
+        </div>
+    }
+</div>
+
+<div class="section-title"><span class="dot pos"></span>@Ui.T("Flat payments")</div>
+<div class="card-soft mb-3">
+    @foreach (var t in Model.Items)
+    {
+        <partial name="_TransactionLine" model="t" />
+    }
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty">@Ui.T("No flat payments yet")</div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const needAmount = @Json.Serialize(Ui.T("Enter the amount"));
+        const amount = document.getElementById('amount');
+        const save = document.getElementById('save');
+        const saveLabel = save.textContent;
+
+        function refresh() {
+            const missing = !(parseFloat(amount.value) > 0);
+            save.disabled = missing;
+            save.textContent = missing ? needAmount : saveLabel;
+        }
+
+        amount.addEventListener('input', refresh);
+        refresh();
+    </script>
+}
